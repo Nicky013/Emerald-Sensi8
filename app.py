@@ -137,16 +137,6 @@ def fmt_thb(amount):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
-
-@app.route('/setup-import-history-x7k2')
-def setup_import():
-    from import_history import import_history
-    try:
-        import_history()
-        return '<h2>Import complete!</h2><a href="/">Go to Dashboard</a>'
-    except Exception as e:
-        return f'<h2>Error: {e}</h2>'
-
 @app.route('/')
 def dashboard():
     conn = get_db()
@@ -170,7 +160,7 @@ def dashboard():
     c.execute('''SELECT r.*, v.villa_name, v.project FROM readings r
                  JOIN villas v ON r.villa_id = v.id
                  WHERE r.invoice_no IS NOT NULL
-                 ORDER BY r.id DESC LIMIT 20''')
+                 ORDER BY r.id DESC LIMIT 5''')
     recent = c.fetchall()
     conn.close()
     return render_template('dashboard.html', months=months, by_project=by_project, recent=recent)

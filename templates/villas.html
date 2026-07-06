@@ -5,41 +5,114 @@
   <p class="page-title">🏠 Villa Register</p>
 
   {% for project in ['Sense8 Samui Villas', 'Samui Emerald Villas'] %}
-  <div class="card">
-    <div class="card-title">{% if project == 'Sense8 Samui Villas' %}🏝{% else %}💎{% endif %} {{ project }}</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Villa Name</th>
-            <th>Owner</th>
-            <th>Occupant</th>
-            <th>Type</th>
-            <th>Rate (฿/unit)</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for v in villas if v['project'] == project %}
-          <tr>
-            <td><strong>{{ v['id'] }}</strong></td>
-            <td>{{ v['villa_name'] }}</td>
-            <td>{{ v['owner_name'] or '–' }}</td>
-            <td>{{ v['occupant_name'] or '–' }}</td>
-            <td>
-              <span class="badge {% if v['occupancy_type']=='Owner Occupied' %}badge-owner{% elif v['occupancy_type']=='Long-Term Tenant' %}badge-tenant{% else %}badge-short{% endif %}">
-                {{ v['occupancy_type'] }}
-              </span>
-            </td>
-            <td><strong>{{ v['rate'] }}</strong></td>
-            <td><a href="/villa/{{ v['id'] }}/edit" class="btn btn-sm btn-outline">Edit</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  {% set icon = '🏝' if project == 'Sense8 Samui Villas' else '💎' %}
+  {% set proj_villas = villas | selectattr('project', 'equalto', project) | list %}
+
+  <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+    <button type="button" class="accordion-header" onclick="toggleProject('{{ loop.index }}')">
+      <span>{{ icon }} {{ project }}</span>
+      <span style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:0.85rem;color:rgba(255,255,255,0.7);">{{ proj_villas|length }} villas</span>
+        <span class="chevron" id="chevron-{{ loop.index }}">▼</span>
+      </span>
+    </button>
+
+    <div class="accordion-body" id="proj-{{ loop.index }}">
+      {% for v in proj_villas %}
+      <div style="border-bottom:1px solid var(--border);">
+        <button type="button" class="villa-header" onclick="toggleVilla('{{ v.id }}')">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="villa-id">{{ v['id'] }}</span>
+            <div>
+              <div style="font-weight:600;font-size:0.95rem;">{{ v['villa_name'] }}</div>
+              <div style="font-size:0.8rem;color:var(--muted);">{{ v['owner_name'] or '–' }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="badge {% if v['occupancy_type']=='Owner Occupied' %}badge-owner{% elif v['occupancy_type']=='Long-Term Tenant' %}badge-tenant{% else %}badge-short{% endif %}">
+              {{ v['occupancy_type'] }}
+            </span>
+            <span style="font-weight:600;color:var(--navy);">{{ v['rate'] }} ฿/unit</span>
+            <span class="chevron-sm" id="vchevron-{{ v['id'] }}">▼</span>
+          </div>
+        </button>
+
+        <div class="villa-body" id="villa-{{ v['id'] }}" style="display:none;">
+          <div class="reading-grid">
+            <div class="reading-info">
+              <div class="info-label">Owner</div>
+              <div class="info-value"><strong>{{ v['owner_name'] or '–' }}</strong></div>
+            </div>
+            <div class="reading-info">
+              <div class="info-label">Occupant</div>
+              <div class="info-value"><strong>{{ v['occupant_name'] or '–' }}</strong></div>
+            </div>
+            <div class="reading-info">
+              <div class="info-label">Occupancy Type</div>
+              <div class="info-value">
+                <span class="badge {% if v['occupancy_type']=='Owner Occupied' %}badge-owner{% elif v['occupancy_type']=='Long-Term Tenant' %}badge-tenant{% else %}badge-short{% endif %}">
+                  {{ v['occupancy_type'] }}
+                </span>
+              </div>
+            </div>
+            <div class="reading-info">
+              <div class="info-label">Electricity Rate</div>
+              <div class="info-value"><strong style="color:var(--navy);font-size:1.1rem;">{{ v['rate'] }} ฿/unit</strong></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <a href="/villa/{{ v['id'] }}/edit" class="btn btn-sm btn-outline">✏️ Edit Villa</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
   {% endfor %}
 </div>
+
+<style>
+.accordion-header {
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  background:var(--navy);color:white;padding:18px 24px;border:none;cursor:pointer;
+  font-size:1rem;font-weight:700;
+}
+.accordion-header:hover { background:var(--navy-light); }
+.accordion-body { display:none; }
+.accordion-body.open { display:block; }
+.chevron { transition:transform 0.2s;font-size:0.8rem; }
+.chevron.open { transform:rotate(180deg); }
+
+.villa-header {
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  background:white;padding:16px 24px;border:none;cursor:pointer;text-align:left;
+  transition:background 0.15s;
+}
+.villa-header:hover { background:#F5F8FB; }
+.villa-id { background:var(--navy);color:white;padding:4px 10px;border-radius:6px;font-size:0.8rem;font-weight:700; }
+.chevron-sm { font-size:0.7rem;color:var(--muted);transition:transform 0.2s; }
+.chevron-sm.open { transform:rotate(180deg); }
+.villa-body { padding:20px 24px;background:#FAFCFF;border-top:1px solid var(--border); }
+
+.reading-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px; }
+.reading-info { background:white;border-radius:8px;padding:12px 16px;border:1px solid var(--border); }
+.info-label { font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px; }
+.info-value { font-size:0.95rem;color:var(--text); }
+</style>
+
+<script>
+function toggleProject(idx) {
+  const body = document.getElementById('proj-' + idx);
+  const chevron = document.getElementById('chevron-' + idx);
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+function toggleVilla(id) {
+  const body = document.getElementById('villa-' + id);
+  const chevron = document.getElementById('vchevron-' + id);
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.classList.toggle('open', !isOpen);
+}
+</script>
 {% endblock %}
