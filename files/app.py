@@ -12,6 +12,7 @@ import io
 
 app = Flask(__name__)
 DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'villas.db')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 # ── Database ──────────────────────────────────────────────────────────────────
 
@@ -135,6 +136,16 @@ def fmt_thb(amount):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
+
+@app.route('/setup-import-history-x7k2')
+def setup_import():
+    from import_history import import_history
+    try:
+        import_history()
+        return '<h2>Import complete!</h2><a href="/">Go to Dashboard</a>'
+    except Exception as e:
+        return f'<h2>Error: {e}</h2>'
 
 @app.route('/')
 def dashboard():
@@ -458,6 +469,7 @@ def generate_invoice_pdf(row):
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, port=5000)
