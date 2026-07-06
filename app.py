@@ -66,9 +66,9 @@ def init_db():
         villa_id TEXT NOT NULL,
         billing_month TEXT NOT NULL,
         previous_reading REAL,
-        previous_date TEXT,
+        prev_date TEXT,
         current_reading REAL,
-        current_date TEXT,
+        reading_date TEXT,
         units REAL,
         rate REAL,
         amount REAL,
@@ -148,9 +148,9 @@ def get_last_reading(villa_id, exclude_month=None):
     conn = get_db()
     c = conn.cursor()
     if exclude_month:
-        c.execute('SELECT current_reading, current_date FROM readings WHERE villa_id=? AND billing_month!=? ORDER BY id DESC LIMIT 1', (villa_id, exclude_month))
+        c.execute('SELECT current_reading, reading_date FROM readings WHERE villa_id=? AND billing_month!=? ORDER BY id DESC LIMIT 1', (villa_id, exclude_month))
     else:
-        c.execute('SELECT current_reading, current_date FROM readings WHERE villa_id=? ORDER BY id DESC LIMIT 1', (villa_id,))
+        c.execute('SELECT current_reading, reading_date FROM readings WHERE villa_id=? ORDER BY id DESC LIMIT 1', (villa_id,))
     row = c.fetchone()
     conn.close()
     return row
@@ -211,11 +211,11 @@ def readings():
             current = float(val)
             last = get_last_reading(villa['id'])
             prev_reading = last['current_reading'] if last else None
-            prev_date = last['current_date'] if last else None
+            prev_date = last['reading_date'] if last else None
             units = round(current - prev_reading, 2) if prev_reading is not None else None
             amount = round(units * villa['rate'], 2) if units is not None else None
             c.execute('''INSERT INTO readings 
-                (villa_id, billing_month, previous_reading, previous_date, current_reading, current_date, units, rate, amount)
+                (villa_id, billing_month, previous_reading, prev_date, current_reading, reading_date, units, rate, amount)
                 VALUES (?,?,?,?,?,?,?,?,?)''',
                 (villa['id'], billing_month, prev_reading, prev_date, current, reading_date, units, villa['rate'], amount))
 
@@ -239,7 +239,7 @@ def readings():
         villa_data.append({
             'villa': v,
             'last_reading': last['current_reading'] if last else None,
-            'last_date': last['current_date'] if last else None,
+            'last_date': last['reading_date'] if last else None,
             'existing': existing.get(v['id'])
         })
 
@@ -391,7 +391,7 @@ def build_invoice_story(row):
     units = f"{float(row['units']):,.0f}" if row['units'] is not None else '-'
     rate = f"{float(row['rate']):.2f}"
     amount = fmt_thb(float(row['amount'])) if row['amount'] else '-'
-    billing_period = f"{row['previous_date']} – {row['current_date']}" if row['previous_date'] else f"– {row['current_date']}"
+    billing_period = f"{row['prev_date']} – {row['reading_date']}" if row['prev_date'] else f"– {row['reading_date']}"
 
     story = [
         Paragraph(project, title_style),
@@ -425,7 +425,7 @@ def build_invoice_story(row):
     story.append(Paragraph('Meter Reading Details', ParagraphStyle('MH', fontSize=10, fontName='Helvetica-Bold', spaceAfter=4)))
     meter_data = [
         ['Previous', 'Date', 'Current', 'Date', 'Units', 'Rate (THB)', 'Total'],
-        [prev, row['previous_date'] or '-', curr, row['current_date'] or '-', units, rate, amount]
+        [prev, row['prev_date'] or '-', curr, row['reading_date'] or '-', units, rate, amount]
     ]
     mt = Table(meter_data, colWidths=[25*mm, 28*mm, 25*mm, 28*mm, 18*mm, 22*mm, 24*mm])
     mt.setStyle(TableStyle([

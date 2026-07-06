@@ -8,3 +8,4 @@ files.zip
 fix_baselines.py
 clear_july.py
 import_readings.py
+seed.sql
