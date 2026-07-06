@@ -137,6 +137,16 @@ def fmt_thb(amount):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+
+@app.route('/setup-import-history-x7k2')
+def setup_import():
+    from import_history import import_history
+    try:
+        import_history()
+        return '<h2>Import complete!</h2><a href="/">Go to Dashboard</a>'
+    except Exception as e:
+        return f'<h2>Error: {e}</h2>'
+
 @app.route('/')
 def dashboard():
     conn = get_db()
