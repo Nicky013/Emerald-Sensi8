@@ -1,6 +1,39 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
-import sqlite3
 import os
+import sqlite3
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
+
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+USE_PG = bool(DATABASE_URL)
+
+if not USE_PG:
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'villas.db')
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+def get_db():
+    if USE_PG:
+        import psycopg2, psycopg2.extras
+        conn = psycopg2.connect(DATABASE_URL)
+        # Wrap cursor to auto-convert ? to %s
+        class C:
+            def __init__(s, c): s._c = c
+            def execute(s, sql, p=None):
+                sql = sql.replace('?','%s')
+                s._c.execute(sql, p) if p else s._c.execute(sql)
+            def fetchone(s): return s._c.fetchone()
+            def fetchall(s): return s._c.fetchall()
+        class W:
+            def __init__(s, c): s._c = c
+            def cursor(s):
+                return C(s._c.cursor(cursor_factory=psycopg2.extras.RealDictCursor))
+            def execute(s, sql, p=None):
+                cur = s.cursor(); cur.execute(sql, p); return cur
+            def commit(s): s._c.commit()
+            def close(s): s._c.close()
+        return W(conn)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 from datetime import datetime, date
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -11,15 +44,6 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 import io
 
 app = Flask(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'villas.db')
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
-# ── Database ──────────────────────────────────────────────────────────────────
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 def init_db():
     conn = get_db()
