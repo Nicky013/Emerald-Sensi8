@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Villa Register – Villa Manager{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="page-title">🏠 Villa Register</p>
+
+  {% for project in ['Sense8 Samui Villas', 'Samui Emerald Villas'] %}
+  <div class="card">
+    <div class="card-title">{% if project == 'Sense8 Samui Villas' %}🏝{% else %}💎{% endif %} {{ project }}</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Villa Name</th>
+            <th>Owner</th>
+            <th>Occupant</th>
+            <th>Type</th>
+            <th>Rate (฿/unit)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in villas if v['project'] == project %}
+          <tr>
+            <td><strong>{{ v['id'] }}</strong></td>
+            <td>{{ v['villa_name'] }}</td>
+            <td>{{ v['owner_name'] or '–' }}</td>
+            <td>{{ v['occupant_name'] or '–' }}</td>
+            <td>
+              <span class="badge {% if v['occupancy_type']=='Owner Occupied' %}badge-owner{% elif v['occupancy_type']=='Long-Term Tenant' %}badge-tenant{% else %}badge-short{% endif %}">
+                {{ v['occupancy_type'] }}
+              </span>
+            </td>
+            <td><strong>{{ v['rate'] }}</strong></td>
+            <td><a href="/villa/{{ v['id'] }}/edit" class="btn btn-sm btn-outline">Edit</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

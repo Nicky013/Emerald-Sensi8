@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Edit Villa – Villa Manager{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="page-title">Edit {{ villa['villa_name'] }}</p>
+  <div class="card" style="max-width:500px;">
+    <form method="POST">
+      <div class="form-group">
+        <label>Occupant Name</label>
+        <input type="text" name="occupant_name" value="{{ villa['occupant_name'] or '' }}">
+      </div>
+      <div class="form-group">
+        <label>Occupancy Type</label>
+        <select name="occupancy_type">
+          {% for t in ['Owner Occupied', 'Long-Term Tenant', 'Short-Term Rental'] %}
+          <option {% if villa['occupancy_type']==t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Electricity Rate (฿ per unit)</label>
+        <input type="number" name="rate" step="0.01" value="{{ villa['rate'] }}">
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/villas" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

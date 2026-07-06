@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – Villa Manager{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="page-title">📊 Dashboard</p>
+
+  <div class="stats">
+    {% for p in by_project %}
+    <div class="stat {% if loop.first %}gold{% else %}green-border{% endif %}">
+      <div class="stat-label">{{ p['project'] }}</div>
+      <div class="stat-value">{{ '{:,.0f}'.format(p['total']) }} ฿</div>
+      <div style="font-size:0.8rem;color:var(--red);margin-top:4px;">Outstanding: {{ '{:,.0f}'.format(p['outstanding']) }} ฿</div>
+    </div>
+    {% endfor %}
+    {% set total_out = namespace(val=0) %}
+    {% for p in by_project %}{% set total_out.val = total_out.val + p['outstanding'] %}{% endfor %}
+    <div class="stat red-border">
+      <div class="stat-label">Total Outstanding</div>
+      <div class="stat-value red">{{ '{:,.0f}'.format(total_out.val) }} ฿</div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+    <a href="/readings" class="btn btn-primary">📟 Enter Meter Readings</a>
+    <a href="/invoices" class="btn btn-gold">🧾 View Invoices</a>
+  </div>
+
+  <!-- Recent invoices -->
+  <div class="card">
+    <div class="card-title">Recent Invoices</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice No.</th>
+            <th>Month</th>
+            <th>Villa</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent %}
+          <tr>
+            <td><a href="/invoices?month={{ r['billing_month'] }}" style="color:var(--navy-light);text-decoration:none;font-weight:600;">{{ r['invoice_no'] }}</a></td>
+            <td>{{ r['billing_month'] }}</td>
+            <td>{{ r['villa_name'] }}</td>
+            <td><strong>{{ '{:,.2f}'.format(r['amount']) }} ฿</strong></td>
+            <td>
+              <span class="badge {% if r['status']=='Paid' %}badge-paid{% else %}badge-unpaid{% endif %}">
+                {{ r['status'] }}
+              </span>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px;">No invoices yet. <a href="/readings">Enter your first readings →</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
