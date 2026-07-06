@@ -12,6 +12,7 @@ import io
 
 app = Flask(__name__)
 DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'villas.db')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 # ── Database ──────────────────────────────────────────────────────────────────
 
