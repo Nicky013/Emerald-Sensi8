@@ -85,8 +85,8 @@ def init_db():
     conn.commit()
 
     # Seed villa data if empty
-    c.execute('SELECT COUNT(*) FROM villas')
-    if c.fetchone()[0] == 0:
+    c.execute('SELECT COUNT(*) AS cnt FROM villas')
+    if c.fetchone()['cnt'] == 0:
         seed_villas(c)
         conn.commit()
 
@@ -140,7 +140,7 @@ def next_invoice_no(project, billing_month, cursor=None):
         row = c.fetchone()
         conn.close()
     if row:
-        num = int(row[0].split('-')[-1]) + 1
+        num = int(row['invoice_no'].split('-')[-1]) + 1
     else:
         num = 1
     return f"{prefix}-ELEC-{dt.year}-{dt.month:02d}-{num:03d}"
