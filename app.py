@@ -171,7 +171,7 @@ def dashboard():
                  SUM(CASE WHEN status='Unpaid' THEN amount ELSE 0 END) as outstanding,
                  COUNT(*) as count
                  FROM readings WHERE invoice_no IS NOT NULL
-                 GROUP BY billing_month ORDER BY id DESC LIMIT 12''')
+                 GROUP BY billing_month ORDER BY MAX(id) DESC LIMIT 12''')
     months = c.fetchall()
 
     c.execute('''SELECT v.project,
