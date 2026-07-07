@@ -287,7 +287,7 @@ def invoices():
                         WHERE r.billing_month=? AND r.invoice_no IS NOT NULL
                         ORDER BY r.invoice_no''', (month,)).fetchall()
     
-    months = c.execute('SELECT DISTINCT billing_month FROM readings WHERE invoice_no IS NOT NULL ORDER BY id DESC').fetchall()
+    months = c.execute('SELECT billing_month FROM readings WHERE invoice_no IS NOT NULL GROUP BY billing_month ORDER BY MAX(id) DESC').fetchall()
     conn.close()
     return render_template('invoices.html', rows=rows, month=month, months=months, fmt_thb=fmt_thb)
 
