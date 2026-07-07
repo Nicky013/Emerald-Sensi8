@@ -61,8 +61,9 @@ def init_db():
         active INTEGER DEFAULT 1
     )''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS readings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_col = 'id SERIAL PRIMARY KEY' if USE_PG else 'id INTEGER PRIMARY KEY AUTOINCREMENT'
+    c.execute(f'''CREATE TABLE IF NOT EXISTS readings (
+        {id_col},
         villa_id TEXT NOT NULL,
         billing_month TEXT NOT NULL,
         previous_reading REAL,
