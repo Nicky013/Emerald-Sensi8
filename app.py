@@ -20,6 +20,7 @@ def get_db():
             def execute(s, sql, p=None):
                 sql = sql.replace('?','%s')
                 s._c.execute(sql, p) if p else s._c.execute(sql)
+                return s
             def fetchone(s): return s._c.fetchone()
             def fetchall(s): return s._c.fetchall()
         class W:
