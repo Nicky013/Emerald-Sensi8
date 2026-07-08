@@ -226,6 +226,11 @@ def readings():
         return redirect(url_for('readings') + f'?month={billing_month}')
 
     # GET — load villas and any existing readings for selected month
+    month_rows = c.execute('SELECT DISTINCT billing_month FROM readings').fetchall()
+    existing_months = {r['billing_month'] for r in month_rows if r['billing_month'] != '_baseline'}
+    existing_months.add(datetime.now().strftime('%B %Y'))
+    available_months = sorted(existing_months, key=lambda m: datetime.strptime(m, '%B %Y'), reverse=True)
+
     selected_month = request.args.get('month', datetime.now().strftime('%B %Y'))
     villas = c.execute('SELECT * FROM villas WHERE active=1 ORDER BY id').fetchall()
 
@@ -247,7 +252,7 @@ def readings():
 
     conn.close()
     today_str = date.today().strftime('%Y-%m-%d')
-    return render_template('readings.html', villa_data=villa_data, selected_month=selected_month, today=today_str)
+    return render_template('readings.html', villa_data=villa_data, selected_month=selected_month, today=today_str, available_months=available_months)
 
 
 @app.route('/generate_invoices', methods=['POST'])

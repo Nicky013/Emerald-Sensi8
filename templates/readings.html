@@ -9,10 +9,11 @@
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <div>
         <label style="font-size:0.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Billing Month</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="monthInput" value="{{ selected_month }}" style="width:160px;">
-          <button onclick="loadMonth()" class="btn btn-outline btn-sm">Load</button>
-        </div>
+        <select id="monthInput" onchange="loadMonth()" style="width:200px;padding:10px 12px;font-size:0.95rem;">
+          {% for m in available_months %}
+          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <label style="font-size:0.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Reading Date</label>
