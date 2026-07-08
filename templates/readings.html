@@ -4,7 +4,7 @@
 <div class="container">
   <p class="page-title">📟 Enter Meter Readings</p>
 
-  <!-- Month & Date -->
+  <!-- Month -->
   <div class="card" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <div>
@@ -15,16 +15,11 @@
           {% endfor %}
         </select>
       </div>
-      <div>
-        <label style="font-size:0.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Reading Date</label>
-        <input type="date" id="readingDate" value="{{ today }}" style="width:180px;">
-      </div>
     </div>
   </div>
 
   <form method="POST" id="readingsForm">
     <input type="hidden" name="billing_month" value="{{ selected_month }}">
-    <input type="hidden" name="reading_date" id="readingDateHidden" value="{{ today }}">
 
     {% for project in ['Sense8 Samui Villas', 'Samui Emerald Villas'] %}
     {% set icon = '🏝' if project == 'Sense8 Samui Villas' else '💎' %}
@@ -180,11 +175,6 @@
 </style>
 
 <script>
-// Sync reading date
-document.getElementById('readingDate').addEventListener('change', function() {
-  document.getElementById('readingDateHidden').value = this.value;
-});
-
 function loadMonth() {
   const m = document.getElementById('monthInput').value;
   window.location.href = '/readings?month=' + encodeURIComponent(m);
