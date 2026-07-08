@@ -281,13 +281,13 @@ def generate_invoices():
 def invoices():
     conn = get_db()
     c = conn.cursor()
-    month = request.args.get('month', datetime.now().strftime('%B %Y'))
+    months = c.execute('SELECT billing_month FROM readings WHERE invoice_no IS NOT NULL GROUP BY billing_month ORDER BY MAX(id) DESC').fetchall()
+    default_month = months[0]['billing_month'] if months else datetime.now().strftime('%B %Y')
+    month = request.args.get('month', default_month)
     rows = c.execute('''SELECT r.*, v.villa_name, v.project, v.occupant_name, v.address, v.owner_name
                         FROM readings r JOIN villas v ON r.villa_id = v.id
                         WHERE r.billing_month=? AND r.invoice_no IS NOT NULL
                         ORDER BY r.invoice_no''', (month,)).fetchall()
-    
-    months = c.execute('SELECT billing_month FROM readings WHERE invoice_no IS NOT NULL GROUP BY billing_month ORDER BY MAX(id) DESC').fetchall()
     conn.close()
     return render_template('invoices.html', rows=rows, month=month, months=months, fmt_thb=fmt_thb)
 
