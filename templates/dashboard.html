@@ -107,7 +107,7 @@
             <td><span style="color:var(--navy-light);font-weight:600;">{{ r['invoice_no'] }}</span></td>
             <td>{{ r['billing_month'] }}</td>
             <td>{{ r['villa_name'] }}</td>
-            <td><strong>{{ '{:,.2f}'.format(r['amount']) }} ฿</strong></td>
+            <td><strong>{{ '{:,.2f}'.format(r['amount']) if r['amount'] is not none else '–' }} ฿</strong></td>
             <td>
               <span class="badge {% if r['status']=='Paid' %}badge-paid{% else %}badge-unpaid{% endif %}">
                 {{ r['status'] }}

@@ -23,9 +23,9 @@
   {% if rows %}
   {% set total = namespace(val=0, paid=0, unpaid=0) %}
   {% for r in rows %}
-    {% set total.val = total.val + r['amount'] %}
-    {% if r['status']=='Paid' %}{% set total.paid = total.paid + r['amount'] %}
-    {% else %}{% set total.unpaid = total.unpaid + r['amount'] %}{% endif %}
+    {% set total.val = total.val + (r['amount'] or 0) %}
+    {% if r['status']=='Paid' %}{% set total.paid = total.paid + (r['amount'] or 0) %}
+    {% else %}{% set total.unpaid = total.unpaid + (r['amount'] or 0) %}{% endif %}
   {% endfor %}
   <div class="stats" style="margin-bottom:20px;">
     <div class="stat gold"><div class="stat-label">Total Billed</div><div class="stat-value">{{ '{:,.0f}'.format(total.val) }} ฿</div></div>
@@ -60,7 +60,7 @@
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-weight:700;font-size:1rem;color:var(--navy);">{{ '{:,.2f}'.format(r['amount']) }} ฿</span>
+            <span style="font-weight:700;font-size:1rem;color:var(--navy);">{{ '{:,.2f}'.format(r['amount']) if r['amount'] is not none else '–' }} ฿</span>
             <span class="badge {% if r['status']=='Paid' %}badge-paid{% else %}badge-unpaid{% endif %}">{{ r['status'] }}</span>
             <span class="chevron-sm" id="vchevron-{{ r['id'] }}">▼</span>
           </div>
