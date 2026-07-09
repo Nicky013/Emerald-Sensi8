@@ -8,7 +8,7 @@
   <div class="card" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <div>
-        <label style="font-size:0.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Billing Month</label>
+        <label style="font-size:0.85rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Enter readings as of today ({{ today_display }})</label>
         <select id="monthInput" onchange="loadMonth()" style="width:200px;padding:10px 12px;font-size:0.95rem;">
           {% for m in available_months %}
           <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
@@ -16,6 +16,7 @@
         </select>
       </div>
     </div>
+    <p style="margin-top:12px;margin-bottom:0;font-size:0.85rem;color:var(--muted);">Each new reading you enter below will be dated today ({{ today_display }}) and calculated from that villa's previous reading shown — whatever days that spans.</p>
   </div>
 
   <form method="POST" id="readingsForm">

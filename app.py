@@ -252,7 +252,8 @@ def readings():
 
     conn.close()
     today_str = date.today().strftime('%Y-%m-%d')
-    return render_template('readings.html', villa_data=villa_data, selected_month=selected_month, today=today_str, available_months=available_months)
+    today_display = date.today().strftime('%d %b %Y')
+    return render_template('readings.html', villa_data=villa_data, selected_month=selected_month, today=today_str, today_display=today_display, available_months=available_months)
 
 
 @app.route('/generate_invoices', methods=['POST'])
