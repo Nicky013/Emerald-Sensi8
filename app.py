@@ -83,6 +83,19 @@ def init_db():
         FOREIGN KEY (villa_id) REFERENCES villas(id)
     )''')
 
+    exp_id_col = 'id SERIAL PRIMARY KEY' if USE_PG else 'id INTEGER PRIMARY KEY AUTOINCREMENT'
+    c.execute(f'''CREATE TABLE IF NOT EXISTS expenses (
+        {exp_id_col},
+        project TEXT NOT NULL,
+        villa_id TEXT,
+        category TEXT NOT NULL,
+        description TEXT,
+        amount REAL NOT NULL,
+        expense_month TEXT NOT NULL,
+        expense_date TEXT NOT NULL,
+        FOREIGN KEY (villa_id) REFERENCES villas(id)
+    )''')
+
     conn.commit()
 
     # Seed villa data if empty
@@ -92,6 +105,8 @@ def init_db():
         conn.commit()
 
     conn.close()
+
+EXPENSE_CATEGORIES = ['Maintenance', 'Repairs', 'Staff Wages', 'Utilities', 'Supplies', 'Insurance', 'Other']
 
 def seed_villas(c):
     villas = [
@@ -188,8 +203,30 @@ def dashboard():
                  WHERE r.invoice_no IS NOT NULL
                  ORDER BY r.id DESC LIMIT 5''')
     recent = c.fetchall()
+
+    c.execute('''SELECT expense_month, SUM(amount) as total, COUNT(*) as count
+                 FROM expenses GROUP BY expense_month''')
+    expense_months = c.fetchall()
+
+    c.execute('''SELECT project, SUM(amount) as total FROM expenses GROUP BY project''')
+    expenses_by_project = c.fetchall()
     conn.close()
-    return render_template('dashboard.html', months=months, by_project=by_project, recent=recent)
+
+    # Combine billed + expenses per month into a net income summary
+    income_map = {m['billing_month']: m['total'] or 0 for m in months}
+    expense_map = {m['expense_month']: m['total'] or 0 for m in expense_months}
+    net_summary = []
+    for mn in set(income_map) | set(expense_map):
+        billed = income_map.get(mn, 0)
+        exp = expense_map.get(mn, 0)
+        net_summary.append({'month': mn, 'billed': billed, 'expenses': exp, 'net': billed - exp})
+    net_summary.sort(key=lambda x: datetime.strptime(x['month'], '%B %Y'), reverse=True)
+    net_summary = net_summary[:12]
+
+    expense_total_map = {p['project']: p['total'] or 0 for p in expenses_by_project}
+
+    return render_template('dashboard.html', months=months, by_project=by_project, recent=recent,
+                           net_summary=net_summary, expense_total_map=expense_total_map)
 
 
 @app.route('/readings', methods=['GET', 'POST'])
@@ -254,6 +291,62 @@ def readings():
     today_str = date.today().strftime('%Y-%m-%d')
     today_display = date.today().strftime('%d %b %Y')
     return render_template('readings.html', villa_data=villa_data, selected_month=selected_month, today=today_str, today_display=today_display, available_months=available_months)
+
+
+@app.route('/expenses', methods=['GET', 'POST'])
+def expenses():
+    conn = get_db()
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        applies_to = request.form['applies_to']
+        category = request.form['category']
+        description = request.form.get('description', '').strip()
+        amount = float(request.form['amount'])
+        expense_month = request.form['expense_month']
+        expense_date = date.today().strftime('%d %b %Y')
+
+        if applies_to.startswith('villa:'):
+            villa_id = applies_to.split(':', 1)[1]
+            villa_row = c.execute('SELECT project FROM villas WHERE id=?', (villa_id,)).fetchone()
+            project = villa_row['project'] if villa_row else ''
+        else:
+            villa_id = None
+            project = applies_to.split(':', 1)[1]
+
+        c.execute('''INSERT INTO expenses (project, villa_id, category, description, amount, expense_month, expense_date)
+            VALUES (?,?,?,?,?,?,?)''',
+            (project, villa_id, category, description, amount, expense_month, expense_date))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('expenses') + f'?month={expense_month}')
+
+    # GET
+    month_rows = c.execute('SELECT DISTINCT expense_month FROM expenses').fetchall()
+    existing_months = {r['expense_month'] for r in month_rows}
+    existing_months.add(datetime.now().strftime('%B %Y'))
+    available_months = sorted(existing_months, key=lambda m: datetime.strptime(m, '%B %Y'), reverse=True)
+
+    selected_month = request.args.get('month', datetime.now().strftime('%B %Y'))
+
+    rows = c.execute('''SELECT e.*, v.villa_name, v.occupant_name, v.owner_name FROM expenses e
+                        LEFT JOIN villas v ON e.villa_id = v.id
+                        WHERE e.expense_month=? ORDER BY e.id DESC''', (selected_month,)).fetchall()
+
+    villas = c.execute('SELECT * FROM villas WHERE active=1 ORDER BY id').fetchall()
+    conn.close()
+    return render_template('expenses.html', rows=rows, selected_month=selected_month,
+                           available_months=available_months, villas=villas,
+                           categories=EXPENSE_CATEGORIES, today_display=date.today().strftime('%d %b %Y'))
+
+
+@app.route('/expense/<int:expense_id>/delete', methods=['POST'])
+def delete_expense(expense_id):
+    conn = get_db()
+    conn.execute('DELETE FROM expenses WHERE id=?', (expense_id,))
+    conn.commit()
+    conn.close()
+    return redirect(request.referrer or url_for('expenses'))
 
 
 @app.route('/generate_invoices', methods=['POST'])

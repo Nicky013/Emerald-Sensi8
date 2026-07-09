@@ -20,6 +20,14 @@
       <div class="stat-value red">{{ '{:,.0f}'.format(total_out.val) }} ฿</div>
       <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Awaiting payment</div>
     </div>
+
+    {% set total_exp = namespace(val=0) %}
+    {% for v in expense_total_map.values() %}{% set total_exp.val = total_exp.val + v %}{% endfor %}
+    <div class="stat" style="border-left-color:#8E44AD;">
+      <div class="stat-label">All Time Expenses</div>
+      <div class="stat-value" style="color:#8E44AD;">{{ '{:,.0f}'.format(total_exp.val) }} ฿</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Across both properties</div>
+    </div>
   </div>
 
   <!-- Quick actions -->
@@ -79,6 +87,37 @@
               {% endif %}
             </td>
             <td><a href="/invoices?month={{ m['billing_month'] }}" class="btn btn-sm btn-outline">View →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Net income -->
+  {% if net_summary %}
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">Net Income by Month</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Billed</th>
+            <th>Expenses</th>
+            <th>Net</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in net_summary %}
+          <tr>
+            <td><strong>{{ n['month'] }}</strong></td>
+            <td>{{ '{:,.2f}'.format(n['billed']) }} ฿</td>
+            <td style="color:var(--red);">{{ '{:,.2f}'.format(n['expenses']) }} ฿</td>
+            <td><strong style="color:{% if n['net'] >= 0 %}var(--green){% else %}var(--red){% endif %};">{{ '{:,.2f}'.format(n['net']) }} ฿</strong></td>
+            <td><a href="/expenses?month={{ n['month'] }}" class="btn btn-sm btn-outline">View expenses →</a></td>
           </tr>
           {% endfor %}
         </tbody>
