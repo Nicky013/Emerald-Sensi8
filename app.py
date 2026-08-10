@@ -236,7 +236,11 @@ def readings():
 
     if request.method == 'POST':
         billing_month = request.form['billing_month']
-        reading_date = date.today().strftime('%d %b %Y')
+        raw_date = request.form.get('reading_date', '').strip()
+        if raw_date:
+            reading_date = datetime.strptime(raw_date, '%Y-%m-%d').strftime('%d %b %Y')
+        else:
+            reading_date = date.today().strftime('%d %b %Y')
 
         # Delete existing draft readings for this month (not yet invoiced)
         c.execute('DELETE FROM readings WHERE billing_month=? AND invoice_no IS NULL', (billing_month,))
@@ -555,7 +559,6 @@ def build_invoice_story(row):
         ['Bank Transfer', 'Krungsri Bank'],
         ['Account Name', 'Sense8 Samui Villas Co Ltd'],
         ['Account Number', '6211169765'],
-        ['Alternative', 'Cash at management office / PayPal / Airbnb where applicable'],
     ]
     pt = Table(pay_data, colWidths=[40*mm, 130*mm])
     pt.setStyle(TableStyle([
