@@ -13,7 +13,7 @@ if not USE_PG:
 def get_db():
     if USE_PG:
         import psycopg2, psycopg2.extras
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=10)
         # Wrap cursor to auto-convert ? to %s
         class C:
             def __init__(s, c): s._c = c
