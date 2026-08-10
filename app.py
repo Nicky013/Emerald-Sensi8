@@ -358,17 +358,22 @@ def meter_history():
     conn = get_db()
     c = conn.cursor()
 
-    rows = c.execute('SELECT villa_id, billing_month, current_reading FROM readings').fetchall()
+    rows = c.execute('SELECT villa_id, reading_date, current_reading FROM readings').fetchall()
     villas = c.execute('SELECT * FROM villas WHERE active=1 ORDER BY id').fetchall()
     conn.close()
 
-    months_set = {r['billing_month'] for r in rows if r['billing_month'] and r['billing_month'] != '_baseline'}
-    months_sorted = sorted(months_set, key=lambda m: datetime.strptime(m, '%B %Y'))
-
+    # Group by the calendar month the reading was actually taken in, not by
+    # the billing_month label (which is one period behind the reading date).
+    months_set = set()
     reading_map = {}
     for r in rows:
-        if r['billing_month'] in months_set:
-            reading_map[(r['villa_id'], r['billing_month'])] = r['current_reading']
+        if not r['reading_date'] or r['current_reading'] is None:
+            continue
+        month_key = datetime.strptime(r['reading_date'], '%d %b %Y').strftime('%B %Y')
+        months_set.add(month_key)
+        reading_map[(r['villa_id'], month_key)] = r['current_reading']
+
+    months_sorted = sorted(months_set, key=lambda m: datetime.strptime(m, '%B %Y'))
 
     grid = []
     for v in villas:
