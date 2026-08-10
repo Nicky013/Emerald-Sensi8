@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Meter Reading History – Villa Manager{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="page-title">📈 Meter Reading History</p>
+  <p style="color:var(--muted);margin-bottom:20px;font-size:0.9rem;">Each column shows the meter reading recorded at the end of that billing month.</p>
+
+  {% if not months %}
+  <div class="card" style="text-align:center;padding:40px;color:var(--muted);">
+    No readings recorded yet.
+  </div>
+  {% endif %}
+
+  {% for project in ['Sense8 Samui Villas', 'Samui Emerald Villas'] %}
+  {% set icon = '🏝' if project == 'Sense8 Samui Villas' else '💎' %}
+  {% set proj_grid = grid | selectattr('villa.project', 'equalto', project) | list %}
+  {% if proj_grid and months %}
+  <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;color:var(--navy);font-size:1.05rem;">{{ icon }} {{ project }}</div>
+    <div style="overflow-x:auto;">
+      <table style="min-width:600px;width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="position:sticky;left:0;background:var(--navy);color:white;z-index:2;padding:12px 16px;text-align:left;white-space:nowrap;">Villa</th>
+            {% for m in months %}
+            <th style="background:var(--navy);color:white;padding:12px 16px;white-space:nowrap;text-align:center;">{{ m }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in proj_grid %}
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="position:sticky;left:0;background:white;font-weight:600;white-space:nowrap;padding:10px 16px;">
+              <span style="background:var(--navy);color:white;padding:2px 8px;border-radius:5px;font-size:0.78rem;font-weight:700;margin-right:8px;">{{ row.villa['id'] }}</span>
+              {{ row.villa['occupant_name'] or row.villa['owner_name'] or row.villa['villa_name'] }}
+            </td>
+            {% for val in row.readings %}
+            <td style="text-align:center;padding:10px 16px;">
+              {% if val is not none %}{{ '{:,.0f}'.format(val) }}{% else %}<span style="color:var(--muted);">–</span>{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

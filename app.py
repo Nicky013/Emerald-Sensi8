@@ -353,6 +353,31 @@ def delete_expense(expense_id):
     return redirect(request.referrer or url_for('expenses'))
 
 
+@app.route('/history')
+def meter_history():
+    conn = get_db()
+    c = conn.cursor()
+
+    rows = c.execute('SELECT villa_id, billing_month, current_reading FROM readings').fetchall()
+    villas = c.execute('SELECT * FROM villas WHERE active=1 ORDER BY id').fetchall()
+    conn.close()
+
+    months_set = {r['billing_month'] for r in rows if r['billing_month'] and r['billing_month'] != '_baseline'}
+    months_sorted = sorted(months_set, key=lambda m: datetime.strptime(m, '%B %Y'))
+
+    reading_map = {}
+    for r in rows:
+        if r['billing_month'] in months_set:
+            reading_map[(r['villa_id'], r['billing_month'])] = r['current_reading']
+
+    grid = []
+    for v in villas:
+        readings_row = [reading_map.get((v['id'], m)) for m in months_sorted]
+        grid.append({'villa': v, 'readings': readings_row})
+
+    return render_template('history.html', months=months_sorted, grid=grid)
+
+
 @app.route('/generate_invoices', methods=['POST'])
 def generate_invoices():
     billing_month = request.form['billing_month']
