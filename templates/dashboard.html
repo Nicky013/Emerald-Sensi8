@@ -21,12 +21,20 @@
       <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Awaiting payment</div>
     </div>
 
-    {% set total_exp = namespace(val=0) %}
-    {% for v in expense_total_map.values() %}{% set total_exp.val = total_exp.val + v %}{% endfor %}
     <div class="stat" style="border-left-color:#8E44AD;">
-      <div class="stat-label">All Time Expenses</div>
-      <div class="stat-value" style="color:#8E44AD;">{{ '{:,.0f}'.format(total_exp.val) }} ฿</div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Across both properties</div>
+      <div class="stat-label">Common Fund Expenses</div>
+      <div class="stat-value" style="color:#8E44AD;">{{ '{:,.0f}'.format(type_totals.project) }} ฿</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">S8/SEV Project — nets against income</div>
+    </div>
+    <div class="stat" style="border-left-color:#16A085;">
+      <div class="stat-label">Villa-Billable Expenses</div>
+      <div class="stat-value" style="color:#16A085;">{{ '{:,.0f}'.format(type_totals.villa) }} ฿</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Owed back by owners</div>
+    </div>
+    <div class="stat" style="border-left-color:#7F8C8D;">
+      <div class="stat-label">RENT (Operations)</div>
+      <div class="stat-value" style="color:#7F8C8D;">{{ '{:,.0f}'.format(type_totals.rent) }} ฿</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Nick's own costs</div>
     </div>
   </div>
 

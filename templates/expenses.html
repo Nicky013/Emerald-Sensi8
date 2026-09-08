@@ -4,100 +4,128 @@
 <div class="container">
   <p class="page-title">💰 Expenses — {{ selected_month }}</p>
 
-  <!-- Month picker -->
+  <!-- Month + View filters -->
   <div class="card" style="margin-bottom:16px;padding:14px 20px;">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <label style="margin:0;font-weight:600;color:var(--muted);font-size:0.85rem;">Month:</label>
-      <select id="monthInput" onchange="loadMonth()" style="width:auto;">
-        {% for m in available_months %}
-        <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div>
+        <label style="margin:0;font-weight:600;color:var(--muted);font-size:0.85rem;display:block;margin-bottom:4px;">Month</label>
+        <select id="monthInput" onchange="reload()" style="width:auto;">
+          {% for m in available_months %}
+          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="margin:0;font-weight:600;color:var(--muted);font-size:0.85rem;display:block;margin-bottom:4px;">View</label>
+        <select id="viewInput" onchange="reload()" style="width:auto;">
+          <option value="all" {% if view_filter == 'all' %}selected{% endif %}>All (Master Sheet)</option>
+          <option value="rent" {% if view_filter == 'rent' %}selected{% endif %}>RENT — Property Management Ops</option>
+          <option value="project:Sense8 Samui Villas" {% if view_filter == 'project:Sense8 Samui Villas' %}selected{% endif %}>S8 Project — Common Funds</option>
+          <option value="project:Samui Emerald Villas" {% if view_filter == 'project:Samui Emerald Villas' %}selected{% endif %}>SEV Project — Common Funds</option>
+          {% for v in villas %}
+          <option value="villa:{{ v['id'] }}" {% if view_filter == 'villa:' ~ v['id'] %}selected{% endif %}>{{ v['id'] }} — {{ v['occupant_name'] or v['owner_name'] or v['villa_name'] }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
   </div>
 
-  <!-- Summary stats -->
+  <!-- Summary -->
   {% if rows %}
   {% set total = namespace(val=0) %}
-  {% set cat_totals = {} %}
-  {% for r in rows %}
-    {% set total.val = total.val + (r['amount'] or 0) %}
-  {% endfor %}
+  {% for r in rows %}{% set total.val = total.val + (r['amount'] or 0) %}{% endfor %}
   <div class="stats" style="margin-bottom:20px;">
-    <div class="stat red-border"><div class="stat-label">Total Expenses</div><div class="stat-value red">{{ '{:,.0f}'.format(total.val) }} ฿</div></div>
+    <div class="stat red-border"><div class="stat-label">Total ({{ 'this view' if view_filter != 'all' else 'this month' }})</div><div class="stat-value red">{{ '{:,.0f}'.format(total.val) }} ฿</div></div>
     <div class="stat"><div class="stat-label">Entries</div><div class="stat-value">{{ rows|length }}</div></div>
   </div>
   {% endif %}
 
   <!-- Add expense -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title">Add Expense (dated today — {{ today_display }})</div>
+    <div class="card-title">Add Expense</div>
     <form method="POST" action="/expenses">
-      <input type="hidden" name="expense_month" value="{{ selected_month }}">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
         <div class="form-group" style="margin-bottom:0;">
-          <label>Applies To</label>
-          <select name="applies_to" required>
-            <option value="general:Sense8 Samui Villas">🏝 General — Sense8 Samui Villas</option>
-            <option value="general:Samui Emerald Villas">💎 General — Samui Emerald Villas</option>
-            {% for v in villas %}
-            <option value="villa:{{ v['id'] }}">{{ v['id'] }} — {{ v['occupant_name'] or v['owner_name'] or v['villa_name'] }}</option>
-            {% endfor %}
-          </select>
+          <label>Date</label>
+          <input type="date" name="expense_date" value="{{ today }}">
         </div>
         <div class="form-group" style="margin-bottom:0;">
-          <label>Category</label>
-          <select name="category" required>
-            {% for cat in categories %}
-            <option value="{{ cat }}">{{ cat }}</option>
-            {% endfor %}
-          </select>
+          <label>Description</label>
+          <input type="text" name="description" placeholder="e.g. Replace broken pool timer">
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <label>Amount (฿)</label>
           <input type="number" name="amount" step="0.01" min="0" required placeholder="0.00">
         </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
         <div class="form-group" style="margin-bottom:0;">
-          <label>Description</label>
-          <input type="text" name="description" placeholder="e.g. Pool pump repair">
+          <label>Paid To</label>
+          <input type="text" name="paid_to" placeholder="e.g. Khun King, Homepro, TOT">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Paid By</label>
+          <input type="text" name="paid_by" list="paidByList" placeholder="Sai or Dan">
+          <datalist id="paidByList">
+            {% for p in paid_by_options %}
+            <option value="{{ p }}">
+            {% endfor %}
+          </datalist>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Paid For</label>
+          <select name="paid_for" required>
+            <option value="rent:RENT">💼 RENT — Property Management Ops</option>
+            <option value="project:Sense8 Samui Villas">🏝 S8 Project — Common Funds</option>
+            <option value="project:Samui Emerald Villas">💎 SEV Project — Common Funds</option>
+            {% for v in villas %}
+            <option value="villa:{{ v['id'] }}">{{ v['id'] }} — {{ v['occupant_name'] or v['owner_name'] or v['villa_name'] }}</option>
+            {% endfor %}
+          </select>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary" style="margin-top:16px;">+ Add Expense</button>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="Optional">
+      </div>
+      <button type="submit" class="btn btn-primary">+ Log Expense</button>
     </form>
   </div>
 
-  <!-- Expense list by project -->
-  {% for project in ['Sense8 Samui Villas', 'Samui Emerald Villas'] %}
-  {% set icon = '🏝' if project == 'Sense8 Samui Villas' else '💎' %}
-  {% set proj_rows = rows | selectattr('project', 'equalto', project) | list %}
-  {% if proj_rows %}
-  {% set proj_total = namespace(val=0) %}
-  {% for r in proj_rows %}{% set proj_total.val = proj_total.val + (r['amount'] or 0) %}{% endfor %}
-
+  <!-- Expense list -->
+  {% if rows %}
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>{{ icon }} {{ project }}</span>
-      <span style="color:var(--red);font-weight:700;">{{ '{:,.2f}'.format(proj_total.val) }} ฿</span>
-    </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>Date</th>
-            <th>Category</th>
-            <th>Applies To</th>
             <th>Description</th>
+            <th>Paid To</th>
+            <th>Paid By</th>
+            <th>Paid For</th>
+            <th>Notes</th>
             <th>Amount</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {% for r in proj_rows %}
+          {% for r in rows %}
           <tr>
-            <td>{{ r['expense_date'] }}</td>
-            <td><span class="badge badge-tenant">{{ r['category'] }}</span></td>
-            <td>{% if r['villa_id'] %}{{ r['villa_id'] }} — {{ r['occupant_name'] or r['owner_name'] or r['villa_name'] }}{% else %}<span style="color:var(--muted);">General</span>{% endif %}</td>
+            <td style="white-space:nowrap;">{{ r['expense_date'] }}</td>
             <td>{{ r['description'] or '–' }}</td>
+            <td>{{ r['paid_to'] or '–' }}</td>
+            <td>{{ r['paid_by'] or '–' }}</td>
+            <td>
+              {% if r['paid_for_type'] == 'rent' %}
+              <span class="badge" style="background:#EAECEE;color:#555;">💼 RENT</span>
+              {% elif r['paid_for_type'] == 'project' %}
+              <span class="badge badge-tenant">{{ '🏝' if 'Sense8' in r['project'] else '💎' }} {{ 'S8' if 'Sense8' in r['project'] else 'SEV' }} Project</span>
+              {% else %}
+              <span class="badge badge-owner">{{ r['villa_id'] }}</span> {{ r['occupant_name'] or r['owner_name'] or r['villa_name'] }}
+              {% endif %}
+            </td>
+            <td style="color:var(--muted);font-size:0.88rem;">{{ r['notes'] or '–' }}</td>
             <td><strong>{{ '{:,.2f}'.format(r['amount']) }} ฿</strong></td>
             <td>
               <form method="POST" action="/expense/{{ r['id'] }}/delete" onsubmit="return confirm('Delete this expense?');" style="display:inline;">
@@ -110,20 +138,18 @@
       </table>
     </div>
   </div>
-  {% endif %}
-  {% endfor %}
-
-  {% if not rows %}
+  {% else %}
   <div class="card" style="text-align:center;padding:40px;color:var(--muted);">
-    No expenses logged for {{ selected_month }} yet.
+    No expenses for this view in {{ selected_month }}.
   </div>
   {% endif %}
 </div>
 
 <script>
-function loadMonth() {
+function reload() {
   const m = document.getElementById('monthInput').value;
-  window.location.href = '/expenses?month=' + encodeURIComponent(m);
+  const v = document.getElementById('viewInput').value;
+  window.location.href = '/expenses?month=' + encodeURIComponent(m) + '&view=' + encodeURIComponent(v);
 }
 </script>
 {% endblock %}
