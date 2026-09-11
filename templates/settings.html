@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Settings – Villa Manager{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="page-title">⚙️ Settings</p>
+
+  {% if not authed %}
+  <div class="card" style="max-width:400px;margin:0 auto;">
+    <div class="card-title">Enter password to continue</div>
+    {% if error %}
+    <p style="color:var(--red);font-size:0.9rem;margin-bottom:12px;">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="/settings">
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" autofocus required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;">Unlock</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="card" style="max-width:500px;">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Bank / Payment Details</span>
+      <a href="/settings/logout" style="font-size:0.85rem;color:var(--muted);">Lock</a>
+    </div>
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px;">These details appear on every invoice PDF, under "Payment Options."</p>
+    <form method="POST" action="/settings">
+      <div class="form-group">
+        <label>Bank Name</label>
+        <input type="text" name="bank_name" value="{{ settings.get('bank_name', '') }}" required>
+      </div>
+      <div class="form-group">
+        <label>Account Name</label>
+        <input type="text" name="account_name" value="{{ settings.get('account_name', '') }}" required>
+      </div>
+      <div class="form-group">
+        <label>Account Number</label>
+        <input type="text" name="account_number" value="{{ settings.get('account_number', '') }}" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

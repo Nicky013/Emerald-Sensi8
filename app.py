@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, session
 
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -45,6 +45,8 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 import io
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-only-change-this-in-render-env-vars')
+SETTINGS_PASSWORD = os.environ.get('SETTINGS_PASSWORD', 'changeme')
 
 def init_db():
     conn = get_db()
@@ -106,7 +108,31 @@ def init_db():
         seed_villas(c)
         conn.commit()
 
+    c.execute('''CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )''')
+    conn.commit()
+
+    c.execute('SELECT COUNT(*) AS cnt FROM settings')
+    if c.fetchone()['cnt'] == 0:
+        defaults = [
+            ('bank_name', 'Krungsri Bank'),
+            ('account_name', 'Sense8 Samui Villas Co Ltd'),
+            ('account_number', '6211169765'),
+        ]
+        for k, v in defaults:
+            c.execute('INSERT INTO settings (key, value) VALUES (?, ?)', (k, v))
+        conn.commit()
+
     conn.close()
+
+def get_settings():
+    conn = get_db()
+    c = conn.cursor()
+    rows = c.execute('SELECT key, value FROM settings').fetchall()
+    conn.close()
+    return {r['key']: r['value'] for r in rows}
 
 PAID_BY_OPTIONS = ['Sai', 'Dan']
 
@@ -421,6 +447,37 @@ def meter_history():
     return render_template('history.html', months=months_sorted, grid=grid)
 
 
+@app.route('/settings', methods=['GET', 'POST'])
+def settings_page():
+    if request.method == 'POST' and 'password' in request.form:
+        if request.form['password'] == SETTINGS_PASSWORD:
+            session['settings_auth'] = True
+            return redirect(url_for('settings_page'))
+        return render_template('settings.html', authed=False, error='Incorrect password')
+
+    if not session.get('settings_auth'):
+        return render_template('settings.html', authed=False)
+
+    if request.method == 'POST':
+        conn = get_db()
+        c = conn.cursor()
+        for key in ['bank_name', 'account_name', 'account_number']:
+            value = request.form.get(key, '').strip()
+            c.execute('DELETE FROM settings WHERE key=?', (key,))
+            c.execute('INSERT INTO settings (key, value) VALUES (?, ?)', (key, value))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('settings_page'))
+
+    return render_template('settings.html', authed=True, settings=get_settings())
+
+
+@app.route('/settings/logout')
+def settings_logout():
+    session.pop('settings_auth', None)
+    return redirect(url_for('settings_page'))
+
+
 @app.route('/generate_invoices', methods=['POST'])
 def generate_invoices():
     billing_month = request.form['billing_month']
@@ -623,10 +680,11 @@ def build_invoice_story(row):
 
     # Payment options
     story.append(Paragraph('Payment Options', ParagraphStyle('PH', fontSize=10, fontName='Helvetica-Bold', spaceAfter=4)))
+    settings = get_settings()
     pay_data = [
-        ['Bank Transfer', 'Krungsri Bank'],
-        ['Account Name', 'Sense8 Samui Villas Co Ltd'],
-        ['Account Number', '6211169765'],
+        ['Bank Transfer', settings.get('bank_name', 'Krungsri Bank')],
+        ['Account Name', settings.get('account_name', 'Sense8 Samui Villas Co Ltd')],
+        ['Account Number', settings.get('account_number', '6211169765')],
     ]
     pt = Table(pay_data, colWidths=[40*mm, 130*mm])
     pt.setStyle(TableStyle([
