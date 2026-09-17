@@ -278,10 +278,21 @@ def readings():
         c.execute('DELETE FROM readings WHERE billing_month=? AND invoice_no IS NULL', (billing_month,))
 
         villas = c.execute('SELECT * FROM villas WHERE active=1 ORDER BY id').fetchall()
+
+        # Fetch every villa's most recent prior reading in ONE query, reusing
+        # this same connection, instead of opening a fresh DB connection per
+        # villa (which is what was timing out the whole request).
+        last_rows = c.execute('SELECT villa_id, current_reading, reading_date, id FROM readings WHERE billing_month != ?', (billing_month,)).fetchall()
+        last_map = {}
+        for r in last_rows:
+            vid = r['villa_id']
+            if vid not in last_map or r['id'] > last_map[vid]['id']:
+                last_map[vid] = r
+
         for villa in villas:
             key = f"reading_{villa['id']}"
             val = request.form.get(key, '').strip()
-            last = get_last_reading(villa['id'], exclude_month=billing_month)
+            last = last_map.get(villa['id'])
             prev_reading = last['current_reading'] if last else None
             prev_date = last['reading_date'] if last else None
             if not val:
@@ -315,10 +326,17 @@ def readings():
     for r in rows:
         existing[r['villa_id']] = r
 
-    # Attach last reading to each villa
+    # Fetch every villa's most recent prior reading in ONE query, same as above.
+    last_rows = c.execute('SELECT villa_id, current_reading, reading_date, id FROM readings WHERE billing_month != ?', (selected_month,)).fetchall()
+    last_map = {}
+    for r in last_rows:
+        vid = r['villa_id']
+        if vid not in last_map or r['id'] > last_map[vid]['id']:
+            last_map[vid] = r
+
     villa_data = []
     for v in villas:
-        last = get_last_reading(v['id'], exclude_month=selected_month)
+        last = last_map.get(v['id'])
         villa_data.append({
             'villa': v,
             'last_reading': last['current_reading'] if last else None,
