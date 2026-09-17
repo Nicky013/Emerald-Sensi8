@@ -284,7 +284,7 @@ def readings():
             if not val:
                 continue
             current = float(val)
-            last = get_last_reading(villa['id'])
+            last = get_last_reading(villa['id'], exclude_month=billing_month)
             prev_reading = last['current_reading'] if last else None
             prev_date = last['reading_date'] if last else None
             units = round(current - prev_reading, 2) if prev_reading is not None else None
